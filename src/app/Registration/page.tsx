@@ -1,7 +1,8 @@
 "use client";
 
 import * as z from "zod";
-import { useState } from "react";
+import axios from "axios";
+import { useState, useEffect } from "react";
 import { AiFillEyeInvisible, AiFillEye } from "react-icons/ai";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,9 @@ import {
   FormMessage,
   useFormField,
 } from "@/components/ui/form";
+import { useMutation } from "@tanstack/react-query";
+import Loading from "@/components/Loading/Loading";
+import ToastComponent from "@/components/ToastComponent/ToastComponent";
 const formSchema = z.object({
   username: z.string().min(2, {
     message: "Username must be at least 2 characters.",
@@ -34,10 +38,18 @@ const formSchema = z.object({
     message: "Password must be at least 6 characters.",
   }),
 });
-
+import swal from "sweetalert";
+import { useRouter } from "next/navigation";
 export default function Page() {
   const [passType, setPassType] = useState("password");
   const [matchErr, setMatchErr] = useState("");
+  const router = useRouter();
+
+  const mutation = useMutation({
+    mutationFn: (data) => {
+      return axios.post("/posts", data);
+    },
+  });
   const handlePasswordType = () => {
     passType === "password" ? setPassType("text") : setPassType("password");
   };
@@ -59,10 +71,12 @@ export default function Page() {
     } else {
       setMatchErr("");
       // Do something with the form values.
+      mutation.mutate({ ...values });
       console.log(values);
     }
   }
-  return (
+  // decide what to render;
+  let content = (
     <main className="w-full min-h-screen flex flex-col items-center justify-center">
       <div className="text-center text-4xl text-semibold my-4">
         Please Registration
@@ -154,4 +168,15 @@ export default function Page() {
       </div>
     </main>
   );
+  if (mutation.isLoading) {
+    content = <Loading />;
+  }
+  if (mutation.isError) {
+    swal("Oops", "Something went wrong!", "error");
+  }
+  if (mutation.isSuccess) {
+    swal("Good job!", "You clicked the button!", "success");
+    router.push("/");
+  }
+  return content;
 }

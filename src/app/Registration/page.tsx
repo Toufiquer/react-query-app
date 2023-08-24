@@ -26,6 +26,7 @@ import Loading from "@/components/Loading/Loading";
 import ToastComponent from "@/components/ToastComponent/ToastComponent";
 import swal from "sweetalert";
 import { useRouter } from "next/navigation";
+import { authStore } from "@/utils/authStore";
 const formSchema = z.object({
   username: z.string().min(2, {
     message: "Username must be at least 2 characters.",
@@ -43,6 +44,7 @@ const formSchema = z.object({
   }),
 });
 export default function Page() {
+  const authLogIn = authStore((state) => state.authLogIn);
   const [passType, setPassType] = useState("password");
   const [matchErr, setMatchErr] = useState("");
   const router = useRouter();
@@ -65,7 +67,6 @@ export default function Page() {
     },
     onSettled: (data, error, variables, context) => {
       // Error or success... doesn't matter!
-      console.log(data);
       if (data?.status === "Auth failed to Save") {
         swal({
           title: "Can't open new one",
@@ -76,9 +77,11 @@ export default function Page() {
       } else {
         const responseToken = data?.token;
         if (responseToken) {
+          authLogIn(data.data.email);
           const encryptedToken = encryptData(responseToken);
           saveCookie("token", encryptedToken);
           swal("Good job!", "You account has been registered", "success");
+
           router.push("/");
         }
       }

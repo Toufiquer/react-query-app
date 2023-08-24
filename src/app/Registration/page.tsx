@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
+import { decryptedData, encryptData } from "@/utils/cryptr";
 import {
   Form,
   FormControl,
@@ -22,6 +23,8 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import Loading from "@/components/Loading/Loading";
 import ToastComponent from "@/components/ToastComponent/ToastComponent";
+import swal from "sweetalert";
+import { useRouter } from "next/navigation";
 const formSchema = z.object({
   username: z.string().min(2, {
     message: "Username must be at least 2 characters.",
@@ -38,16 +41,20 @@ const formSchema = z.object({
     message: "Password must be at least 6 characters.",
   }),
 });
-import swal from "sweetalert";
-import { useRouter } from "next/navigation";
 export default function Page() {
   const [passType, setPassType] = useState("password");
   const [matchErr, setMatchErr] = useState("");
   const router = useRouter();
-
   const mutation = useMutation({
     mutationFn: (data) => {
-      return axios.post("/posts", data);
+      // return axios.post("/auth", data);
+      return fetch("http://localhost:5000/api/v1/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+        }),
+      });
     },
   });
   const handlePasswordType = () => {
@@ -70,9 +77,14 @@ export default function Page() {
       setMatchErr("Password doesn't match");
     } else {
       setMatchErr("");
+      // const encryptPass = encryptData(values.password);
       // Do something with the form values.
-      mutation.mutate({ ...values });
-      console.log(values);
+      mutation.mutate({
+        username: values.username,
+        email: values.email,
+        // password: encryptPass,
+        password: values.password,
+      });
     }
   }
   // decide what to render;

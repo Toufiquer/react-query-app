@@ -107,13 +107,12 @@ export default function Page() {
       setMatchErr("Password doesn't match");
     } else {
       setMatchErr("");
-      // const encryptPass = encryptData(values.password);
+      const encryptPass = encryptData(values.password);
       // Do something with the form values.
       mutation.mutate({
         username: values.username,
         email: values.email,
-        // password: encryptPass,
-        password: values.password,
+        password: encryptPass,
       });
     }
   }
@@ -167,7 +166,10 @@ export default function Page() {
                     <Input type={passType} placeholder="***" {...field} />
                   </FormControl>
                   <FormMessage />
-                  <div className="absolute top-[35px] right-4 cursor-pointer">
+                  <div
+                    onClick={handlePasswordType}
+                    className="absolute top-[35px] right-4 cursor-pointer"
+                  >
                     {passType !== "password" ? (
                       <AiFillEyeInvisible />
                     ) : (

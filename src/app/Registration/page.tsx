@@ -3,6 +3,7 @@
 import * as z from "zod";
 import axios from "axios";
 import { useState, useEffect } from "react";
+import { saveCookie, getCookie } from "@/utils/cookies";
 import { AiFillEyeInvisible, AiFillEye } from "react-icons/ai";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,15 +47,41 @@ export default function Page() {
   const [matchErr, setMatchErr] = useState("");
   const router = useRouter();
   const mutation = useMutation({
-    mutationFn: (data) => {
+    mutationFn: async (data) => {
       // return axios.post("/auth", data);
-      return fetch("http://localhost:5000/api/v1/auth", {
+      let result = {};
+      await fetch("http://localhost:5000/api/v1/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
         }),
-      });
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          result = { ...data };
+        });
+      return result;
+    },
+    onSettled: (data, error, variables, context) => {
+      // Error or success... doesn't matter!
+      console.log(data);
+      if (data?.status === "Auth failed to Save") {
+        swal({
+          title: "Can't open new one",
+          text: "User Already Exist",
+          icon: "warning",
+          dangerMode: true,
+        });
+      } else {
+        const responseToken = data?.token;
+        if (responseToken) {
+          const encryptedToken = encryptData(responseToken);
+          saveCookie("token", encryptedToken);
+          swal("Good job!", "You account has been registered", "success");
+          router.push("/");
+        }
+      }
     },
   });
   const handlePasswordType = () => {
@@ -186,9 +213,12 @@ export default function Page() {
   if (mutation.isError) {
     swal("Oops", "Something went wrong!", "error");
   }
-  if (mutation.isSuccess) {
-    swal("Good job!", "You clicked the button!", "success");
-    router.push("/");
-  }
+  // if (mutation.isSuccess) {
+  //   // swal("Good job!", "You clicked the button!", "success");
+  //   // saveCookie({ name: "token", data: "mutation.data.token" });
+  //   // const cookies = getCookie("Name");
+  //   // console.log(mutation);
+  //   // router.push("/");
+  // }
   return content;
 }
